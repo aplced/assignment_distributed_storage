@@ -1,6 +1,6 @@
 package com.via.keyvalueservice.models;
 
-import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.mongodb.repository.MongoRepository;
 
-public interface KeyValueItemRepository extends JpaRepository<KeyValueItem, String> {
+public interface KeyValueItemRepository extends MongoRepository<KeyValueItem, String> {
 }
