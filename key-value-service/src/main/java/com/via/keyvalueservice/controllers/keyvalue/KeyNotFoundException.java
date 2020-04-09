@@ -1,4 +1,4 @@
-package com.via.keyvalueservice.controllers;
+package com.via.keyvalueservice.controllers.keyvalue;
 
 public class KeyNotFoundException extends RuntimeException {
     KeyNotFoundException(String key) {

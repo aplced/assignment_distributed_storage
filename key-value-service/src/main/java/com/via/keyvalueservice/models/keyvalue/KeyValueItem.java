@@ -1,4 +1,4 @@
-package com.via.keyvalueservice.models;
+package com.via.keyvalueservice.models.keyvalue;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -15,4 +15,5 @@ public class KeyValueItem {
     private @Id String key;
     private String value;
     private long ticks;
+    private boolean deleted;
 }

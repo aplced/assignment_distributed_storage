@@ -1,4 +1,4 @@
-package com.via.keyvalueservice.controllers;
+package com.via.keyvalueservice.controllers.keyvalue;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.ControllerAdvice;

@@ -1,7 +1,7 @@
-package com.via.keyvalueservice.controllers;
+package com.via.keyvalueservice.controllers.keyvalue;
 
-import com.via.keyvalueservice.models.KeyValueItem;
-import com.via.keyvalueservice.models.KeyValueItemRepository;
+import com.via.keyvalueservice.models.keyvalue.KeyValueItem;
+import com.via.keyvalueservice.models.keyvalue.KeyValueItemRepository;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.validation.annotation.Validated;
@@ -12,7 +12,6 @@ import org.springframework.web.bind.annotation.RestController;
 import javax.validation.constraints.Size;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
-import java.util.Date;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -28,7 +27,7 @@ public class KeyValueServiceController {
 
     @GetMapping("/set")
     void set(@RequestParam(name = "k") @Size(min = 1, max = 64) String key, @RequestParam(name = "v") @Size(min = 1, max = 256) String value) {
-        KeyValueItem item = new KeyValueItem(key, value, LocalDateTime.now().toEpochSecond(ZoneOffset.UTC));
+        KeyValueItem item = new KeyValueItem(key, value, LocalDateTime.now().toEpochSecond(ZoneOffset.UTC), false);
         keyValueItemRepository.save(item);
     }
 
@@ -45,12 +44,17 @@ public class KeyValueServiceController {
     @GetMapping("/rm")
     void rm(@RequestParam(name = "k") String key) {
         KeyValueItem item = keyValueItemRepository.findById(key).orElseThrow(() -> new KeyNotFoundException(key));
-        keyValueItemRepository.delete(item);
+        item.setDeleted(true);
+        keyValueItemRepository.save(item);
     }
 
     @GetMapping("/clear")
     void clear() {
-        keyValueItemRepository.deleteAll();
+        List<KeyValueItem> deletedItems = keyValueItemRepository.findAll().stream().map(i -> {
+            i.setDeleted(true);
+            return i;
+        }).collect(Collectors.toList());
+        keyValueItemRepository.saveAll(deletedItems);
     }
 
     //getAll takes an optional page number parameter "p" which selects key value items in batches of 500
