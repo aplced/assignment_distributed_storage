@@ -10,6 +10,9 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import javax.validation.constraints.Size;
+import java.time.LocalDateTime;
+import java.time.ZoneOffset;
+import java.util.Date;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -25,7 +28,7 @@ public class KeyValueServiceController {
 
     @GetMapping("/set")
     void set(@RequestParam(name = "k") @Size(min = 1, max = 64) String key, @RequestParam(name = "v") @Size(min = 1, max = 256) String value) {
-        KeyValueItem item = new KeyValueItem(key, value);
+        KeyValueItem item = new KeyValueItem(key, value, LocalDateTime.now().toEpochSecond(ZoneOffset.UTC));
         keyValueItemRepository.save(item);
     }
 
