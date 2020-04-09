@@ -8,6 +8,8 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import javax.validation.constraints.Size;
+import java.util.List;
+import java.util.stream.Collectors;
 
 @RestController
 @Validated
@@ -43,5 +45,20 @@ public class KeyValueServiceController {
     @GetMapping("/clear")
     void clear() {
         keyValueItemRepository.deleteAll();
+    }
+
+    @GetMapping("/getAll")
+    List<KeyValueItem> getAll() {
+        return keyValueItemRepository.findAll();
+    }
+
+    @GetMapping("/getKeys")
+    List<String> getKeys() {
+        return keyValueItemRepository.findAll().stream().map(i -> i.getKey()).collect(Collectors.toList());
+    }
+
+    @GetMapping("/getValues")
+    List<String> getValues() {
+        return keyValueItemRepository.findAll().stream().map(i -> i.getValue()).collect(Collectors.toList());
     }
 }
