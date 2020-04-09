@@ -27,7 +27,7 @@ public class ClusterNodeUpdater {
     }
 
     public void updateKeyValueItem(KeyValueItem updatedItem) {
-        clusterNodeRepository.findAll().stream().forEach(node -> {
+        clusterNodeRepository.findAll().parallelStream().forEach(node -> {
             WebClient nodeClient = WebClient.create(node.getHostAddress() + ":8080");
             KeyValueItem remoteKeyValueItem = nodeClient
                     .post()
@@ -45,7 +45,7 @@ public class ClusterNodeUpdater {
     }
 
     public void updateKeyValueItems(List<KeyValueItem> updatedItems) {
-        clusterNodeRepository.findAll().stream().forEach(node -> {
+        clusterNodeRepository.findAll().parallelStream().forEach(node -> {
             WebClient nodeClient = WebClient.create(node.getHostAddress() + ":8080");
             KeyValueItem remoteKeyValueItem = nodeClient
                     .post()
