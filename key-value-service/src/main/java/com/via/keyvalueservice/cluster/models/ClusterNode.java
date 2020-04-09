@@ -1,4 +1,4 @@
-package com.via.keyvalueservice.models.keyvalue;
+package com.via.keyvalueservice.cluster.models;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -11,9 +11,7 @@ import javax.persistence.Id;
 @AllArgsConstructor
 @NoArgsConstructor
 @Entity
-public class KeyValueItem {
-    private @Id String key;
-    private String value;
-    private long ticks;
-    private boolean deleted;
+public class ClusterNode {
+    private @Id String hostAddress;
+    private long lastUpdateSent;
 }

@@ -1,4 +1,4 @@
-package com.via.keyvalueservice.models.cluster;
+package com.via.keyvalueservice.cluster.models;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 

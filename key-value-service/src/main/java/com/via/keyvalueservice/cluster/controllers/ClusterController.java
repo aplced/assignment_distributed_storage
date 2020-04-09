@@ -1,14 +1,13 @@
-package com.via.keyvalueservice.controllers.cluster;
+package com.via.keyvalueservice.cluster.controllers;
 
-import com.via.keyvalueservice.models.cluster.ClusterNode;
-import com.via.keyvalueservice.models.cluster.ClusterNodeRepository;
-import com.via.keyvalueservice.models.keyvalue.KeyValueItem;
-import com.via.keyvalueservice.models.keyvalue.KeyValueItemRepository;
+import com.via.keyvalueservice.cluster.models.ClusterNode;
+import com.via.keyvalueservice.cluster.models.ClusterNodeRepository;
+import com.via.keyvalueservice.keyvalue.models.KeyValueItem;
+import com.via.keyvalueservice.keyvalue.models.KeyValueItemRepository;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
-import org.springframework.web.reactive.function.client.WebClient;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -16,7 +15,6 @@ import java.util.Optional;
 
 @RestController
 public class ClusterController {
-    private final List<WebClient> clusterNodes = new ArrayList<>();
     private final ClusterNodeRepository repository;
     private final KeyValueItemRepository itemRepository;
 
@@ -52,5 +50,20 @@ public class ClusterController {
         } else {
             return myItem.get();
         }
+    }
+
+    @PostMapping("cluster/internal/batchUpdate")
+    List<KeyValueItem> batchUpdateKeyValueItem(@RequestBody List<KeyValueItem> updatingItems) {
+        List<KeyValueItem> response = new ArrayList<>();
+        updatingItems.forEach(updatingItem -> {
+            Optional<KeyValueItem> myItem = itemRepository.findById(updatingItem.getKey());
+            //Update this nodes key value item only if it doesn't exist or if the update is fresher
+            if (!myItem.isPresent() || updatingItem.getTicks() > myItem.get().getTicks()) {
+                itemRepository.save(updatingItem);
+            } else {
+                response.add(myItem.get());
+            }
+        });
+        return response;
     }
 }

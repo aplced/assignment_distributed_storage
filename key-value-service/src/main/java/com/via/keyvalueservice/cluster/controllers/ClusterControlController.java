@@ -1,7 +1,7 @@
-package com.via.keyvalueservice.controllers.cluster;
+package com.via.keyvalueservice.cluster.controllers;
 
-import com.via.keyvalueservice.models.cluster.ClusterNode;
-import com.via.keyvalueservice.models.cluster.ClusterNodeRepository;
+import com.via.keyvalueservice.cluster.models.ClusterNode;
+import com.via.keyvalueservice.cluster.models.ClusterNodeRepository;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;

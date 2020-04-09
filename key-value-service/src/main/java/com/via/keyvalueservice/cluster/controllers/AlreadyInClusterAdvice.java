@@ -1,4 +1,4 @@
-package com.via.keyvalueservice.controllers.keyvalue;
+package com.via.keyvalueservice.cluster.controllers;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.ControllerAdvice;
@@ -7,12 +7,11 @@ import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.ResponseStatus;
 
 @ControllerAdvice
-public class KeyNotFoundAdvice {
+public class AlreadyInClusterAdvice {
     @ResponseBody
-    @ExceptionHandler(KeyNotFoundException.class)
-    @ResponseStatus(HttpStatus.NOT_FOUND)
-    String keyNotFoundHandler(KeyNotFoundException ex) {
+    @ExceptionHandler(AlreadyInClusterException.class)
+    @ResponseStatus(HttpStatus.CONFLICT)
+    String alreadyInClusterHandler(AlreadyInClusterException ex) {
         return ex.getMessage();
     }
-
 }

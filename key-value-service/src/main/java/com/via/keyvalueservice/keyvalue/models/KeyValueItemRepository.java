@@ -1,4 +1,4 @@
-package com.via.keyvalueservice.models.keyvalue;
+package com.via.keyvalueservice.keyvalue.models;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 

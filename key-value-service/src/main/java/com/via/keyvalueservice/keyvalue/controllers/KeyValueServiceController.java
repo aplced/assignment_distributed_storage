@@ -1,7 +1,8 @@
-package com.via.keyvalueservice.controllers.keyvalue;
+package com.via.keyvalueservice.keyvalue.controllers;
 
-import com.via.keyvalueservice.models.keyvalue.KeyValueItem;
-import com.via.keyvalueservice.models.keyvalue.KeyValueItemRepository;
+import com.via.keyvalueservice.cluster.ClusterNodeUpdater;
+import com.via.keyvalueservice.keyvalue.models.KeyValueItem;
+import com.via.keyvalueservice.keyvalue.models.KeyValueItemRepository;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.validation.annotation.Validated;
@@ -20,32 +21,41 @@ import java.util.stream.Collectors;
 @Validated
 public class KeyValueServiceController {
     private final KeyValueItemRepository keyValueItemRepository;
+    private final ClusterNodeUpdater clusterNodeUpdater;
 
-    public KeyValueServiceController(KeyValueItemRepository keyValueItemRepository) {
+    public KeyValueServiceController(KeyValueItemRepository keyValueItemRepository, ClusterNodeUpdater clusterNodeUpdater) {
         this.keyValueItemRepository = keyValueItemRepository;
+        this.clusterNodeUpdater = clusterNodeUpdater;
     }
 
     @GetMapping("/set")
     void set(@RequestParam(name = "k") @Size(min = 1, max = 64) String key, @RequestParam(name = "v") @Size(min = 1, max = 256) String value) {
         KeyValueItem item = new KeyValueItem(key, value, LocalDateTime.now().toEpochSecond(ZoneOffset.UTC), false);
-        keyValueItemRepository.save(item);
+        clusterNodeUpdater.updateKeyValueItem(item);
     }
 
     @GetMapping("/is")
     void is(@RequestParam(name = "k") String key) {
-        keyValueItemRepository.findById(key).orElseThrow(() -> new KeyNotFoundException(key));
+        if(keyValueItemRepository.findById(key).orElseThrow(() -> new KeyValueServiceException(key)).isDeleted()){
+            throw new KeyValueServiceException(key);
+        }
     }
 
     @GetMapping("/get")
     String get(@RequestParam(name = "k") String key) {
-        return keyValueItemRepository.findById(key).orElseThrow(() -> new KeyNotFoundException(key)).getValue();
+        KeyValueItem item = keyValueItemRepository.findById(key).orElseThrow(() -> new KeyValueServiceException(key));
+        if(item.isDeleted()){
+            throw new KeyValueServiceException(key);
+        }
+
+        return item.getValue();
     }
 
     @GetMapping("/rm")
     void rm(@RequestParam(name = "k") String key) {
-        KeyValueItem item = keyValueItemRepository.findById(key).orElseThrow(() -> new KeyNotFoundException(key));
+        KeyValueItem item = keyValueItemRepository.findById(key).orElseThrow(() -> new KeyValueServiceException(key));
         item.setDeleted(true);
-        keyValueItemRepository.save(item);
+        clusterNodeUpdater.updateKeyValueItem(item);
     }
 
     @GetMapping("/clear")
@@ -54,7 +64,7 @@ public class KeyValueServiceController {
             i.setDeleted(true);
             return i;
         }).collect(Collectors.toList());
-        keyValueItemRepository.saveAll(deletedItems);
+        clusterNodeUpdater.updateKeyValueItems(deletedItems);
     }
 
     //getAll takes an optional page number parameter "p" which selects key value items in batches of 500
@@ -71,11 +81,11 @@ public class KeyValueServiceController {
 
     @GetMapping("/getKeys")
     List<String> getKeys() {
-        return keyValueItemRepository.findAll().stream().map(i -> i.getKey()).collect(Collectors.toList());
+        return keyValueItemRepository.findAll().stream().filter(i -> !i.isDeleted()).map(i -> i.getKey()).collect(Collectors.toList());
     }
 
     @GetMapping("/getValues")
     List<String> getValues() {
-        return keyValueItemRepository.findAll().stream().map(i -> i.getValue()).collect(Collectors.toList());
+        return keyValueItemRepository.findAll().stream().filter(i -> !i.isDeleted()).map(i -> i.getValue()).collect(Collectors.toList());
     }
 }
