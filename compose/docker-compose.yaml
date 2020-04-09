@@ -1,0 +1,6 @@
+version: '3'
+services:
+  web:
+    build: ../key-value-service/.
+    ports:
+      - "8080:8080"
