@@ -4,15 +4,12 @@ import com.via.keyvalueservice.cluster.models.ClusterNode;
 import com.via.keyvalueservice.cluster.models.ClusterNodeRepository;
 import com.via.keyvalueservice.keyvalue.models.KeyValueItem;
 import com.via.keyvalueservice.keyvalue.models.KeyValueItemRepository;
-import org.apache.catalina.Cluster;
-import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.function.BodyInserters;
 import org.springframework.web.reactive.function.client.WebClient;
 
 import java.net.InetAddress;
 import java.net.UnknownHostException;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
@@ -29,10 +26,6 @@ public class ClusterNodeUpdater {
         hostIp = InetAddress.getLocalHost().getHostAddress();
     }
 
-    @Scheduled(fixedDelay = 1000, initialDelay = 1000)
-    public void updateNodesTask() {
-    }
-
     public void joinCluster(String host) {
         if(clusterNodeRepository.count() > 0){
             throw new AlreadyInClusterException(host);
@@ -42,12 +35,15 @@ public class ClusterNodeUpdater {
 
         WebClient nodeClient = WebClient.create(host + PORT);
         ClusterNode[] clusterNodes = nodeClient.post()
-                .uri("cluster/internal/update?host=" + hostIp)
+                .uri("cluster/internal/update?host=" + hostIp + "&nodeList=true")
                 .retrieve()
                 .bodyToMono(ClusterNode[].class)
                 .block();
 
-        Arrays.stream(clusterNodes).forEach(node -> clusterNodeRepository.save(node));
+        Arrays.stream(clusterNodes).parallel().forEach(node -> {
+            clusterNodeRepository.save(node);
+            WebClient.create(node.getHostAddress() + PORT).post().uri("cluster/internal/update?host=" + hostIp);
+        });
     }
 
     public void leaveCluster() {
