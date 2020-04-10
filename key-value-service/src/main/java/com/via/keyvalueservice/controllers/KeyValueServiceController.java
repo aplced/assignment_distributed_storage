@@ -63,12 +63,28 @@ public class KeyValueServiceController {
     }
 
     @GetMapping("/getKeys")
-    List<String> getKeys() {
-        return keyValueItemRepository.findAll().stream().map(i -> i.getKey()).collect(Collectors.toList());
+    List<String> getKeys(@RequestParam(name = "p") Optional<Integer> pageNumber) {
+        List<KeyValueItem> keys;
+        if(pageNumber.isPresent()) {
+            Pageable pageable = PageRequest.of(pageNumber.get(), 500);
+            keys = keyValueItemRepository.findAll(pageable).getContent();
+        } else {
+            keys = keyValueItemRepository.findAll();
+        }
+
+        return keys.stream().map(i -> i.getKey()).collect(Collectors.toList());
     }
 
     @GetMapping("/getValues")
-    List<String> getValues() {
-        return keyValueItemRepository.findAll().stream().map(i -> i.getValue()).collect(Collectors.toList());
+    List<String> getValues(@RequestParam(name = "p") Optional<Integer> pageNumber) {
+        List<KeyValueItem> keys;
+        if(pageNumber.isPresent()) {
+            Pageable pageable = PageRequest.of(pageNumber.get(), 500);
+            keys = keyValueItemRepository.findAll(pageable).getContent();
+        } else {
+            keys = keyValueItemRepository.findAll();
+        }
+
+        return keys.stream().map(i -> i.getValue()).collect(Collectors.toList());
     }
 }
