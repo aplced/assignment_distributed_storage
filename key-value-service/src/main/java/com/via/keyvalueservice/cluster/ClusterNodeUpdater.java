@@ -4,6 +4,7 @@ import com.via.keyvalueservice.cluster.models.ClusterNode;
 import com.via.keyvalueservice.cluster.models.ClusterNodeRepository;
 import com.via.keyvalueservice.keyvalue.models.KeyValueItem;
 import com.via.keyvalueservice.keyvalue.models.KeyValueItemRepository;
+import org.apache.catalina.Cluster;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.function.BodyInserters;
@@ -12,6 +13,7 @@ import org.springframework.web.reactive.function.client.WebClient;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 @Component
@@ -36,10 +38,16 @@ public class ClusterNodeUpdater {
             throw new AlreadyInClusterException(host);
         }
 
-        WebClient nodeClient = WebClient.create(host + PORT);
-        nodeClient.post().uri("cluster/internal/update?host=" + hostIp);
-
         clusterNodeRepository.save(new ClusterNode(host, 0));
+
+        WebClient nodeClient = WebClient.create(host + PORT);
+        ClusterNode[] clusterNodes = nodeClient.post()
+                .uri("cluster/internal/update?host=" + hostIp)
+                .retrieve()
+                .bodyToMono(ClusterNode[].class)
+                .block();
+
+        Arrays.stream(clusterNodes).forEach(node -> clusterNodeRepository.save(node));
     }
 
     public void leaveCluster() {
@@ -79,10 +87,10 @@ public class ClusterNodeUpdater {
     public void updateKeyValueItems(List<KeyValueItem> updatedItems) {
         clusterNodeRepository.findAll().parallelStream().forEach(node -> {
             WebClient nodeClient = WebClient.create(node.getHostAddress() + PORT);
-            KeyValueItem remoteKeyValueItem = nodeClient
+            KeyValueItem[] remoteKeyValueItems = nodeClient
                     .post()
                     .uri("cluster/internal/batchUpdate").body(BodyInserters.fromValue(updatedItems)).retrieve()
-                    .bodyToMono(KeyValueItem.class)
+                    .bodyToMono(KeyValueItem[].class)
                     .block();
 
             //A fresher update has already happened, but this node has missed the update
