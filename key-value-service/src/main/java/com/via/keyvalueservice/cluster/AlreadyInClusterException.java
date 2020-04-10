@@ -1,4 +1,4 @@
-package com.via.keyvalueservice.cluster.controllers;
+package com.via.keyvalueservice.cluster;
 
 public class AlreadyInClusterException extends RuntimeException {
     AlreadyInClusterException(String host) {
