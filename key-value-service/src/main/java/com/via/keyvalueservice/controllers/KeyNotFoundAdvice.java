@@ -1,5 +1,6 @@
 package com.via.keyvalueservice.controllers;
 
+import com.via.keyvalueservice.exceptions.KeyNotFoundException;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;

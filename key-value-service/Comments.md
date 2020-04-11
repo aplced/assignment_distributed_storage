@@ -1,5 +1,25 @@
+##General
 In resources\application.properties if the setting dbtest.initialize is set to true and the database is empty it will be populated with 1 million entries on startup for testing purposes.
 
+Swagger ui api description is available http://localhost:8080/swagger-ui.html
+
+##Project Structure
+Main package is com.via.keyvalueservice
+- KeyValueServiceApplication: the spring boot applciation
+- config
+  - KeyValueStoreInitializer: a dummy data initialization on start up based on dbtest.initialize
+  - SpringFoxConfig: configuration for swagger
+- controllers
+  - KeyValueServiceController: the REST api controller
+  - KeyNotFoundAdvice: controller advice handling KeyNotFoundException being returned as 404 NOT FOUND
+- exceptions
+  - KeyNotFoundException: Formats output when key is not present in the database and is used by KeyNotFoundAdvice
+- models
+  - KeyValueItem: the pojo being serialized in the repository and returned to the user
+- repositories:
+  - KeyValueItemRepository: the KeyValueItem repository definition
+
+##Comments on specific tasks
 ### Tasks 2
 
 Querying a million of entries persistent on mongodb takes ~7 seconds, which considering the text format of the data is ok-ish. 

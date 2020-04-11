@@ -1,7 +1,7 @@
-package com.via.keyvalueservice.controllers;
+package com.via.keyvalueservice.exceptions;
 
 public class KeyNotFoundException extends RuntimeException {
-    KeyNotFoundException(String key) {
+    public KeyNotFoundException(String key) {
         super("Key: " + key + " doesn't exist");
     }
 }

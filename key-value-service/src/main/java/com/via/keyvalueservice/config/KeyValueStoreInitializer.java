@@ -1,7 +1,7 @@
-package com.via.keyvalueservice.controllers;
+package com.via.keyvalueservice.config;
 
 import com.via.keyvalueservice.models.KeyValueItem;
-import com.via.keyvalueservice.models.KeyValueItemRepository;
+import com.via.keyvalueservice.repositories.KeyValueItemRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;

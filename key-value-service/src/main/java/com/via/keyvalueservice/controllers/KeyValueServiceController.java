@@ -1,7 +1,9 @@
 package com.via.keyvalueservice.controllers;
 
+import com.via.keyvalueservice.exceptions.KeyNotFoundException;
 import com.via.keyvalueservice.models.KeyValueItem;
-import com.via.keyvalueservice.models.KeyValueItemRepository;
+import com.via.keyvalueservice.repositories.KeyValueItemRepository;
+import io.swagger.annotations.*;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.validation.annotation.Validated;
@@ -14,6 +16,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
+@Api(value="Employee Management System", description="Operations pertaining to employee in Employee Management Syste")
 @RestController
 @Validated
 public class KeyValueServiceController {
@@ -24,28 +27,59 @@ public class KeyValueServiceController {
     }
 
     @GetMapping("/set")
-    void set(@RequestParam(name = "k") @Size(min = 1, max = 64) String key, @RequestParam(name = "v") @Size(min = 1, max = 256) String value) {
+    @ApiOperation(value = "Creates or updates a key with value")
+    void set(
+            @ApiParam(name="k", value="String key with max length of 64")
+            @RequestParam(name = "k") @Size(min = 1, max = 64) String key,
+            @ApiParam(name="v", value="String value with max length of 256")
+            @RequestParam(name = "v") @Size(min = 1, max = 256) String value
+    ) {
         KeyValueItem item = new KeyValueItem(key, value);
         keyValueItemRepository.save(item);
     }
 
     @GetMapping("/is")
-    void is(@RequestParam(name = "k") String key) {
+    @ApiOperation(value = "Checks if key exists")
+    @ApiResponses(value = {
+            @ApiResponse(code = 200, message = "Key exists"),
+            @ApiResponse(code = 404, message = "Key not found")
+    })
+    void is(
+            @ApiParam(name="k", value="String key with max length of 64")
+            @RequestParam(name = "k") String key
+    ) {
         keyValueItemRepository.findById(key).orElseThrow(() -> new KeyNotFoundException(key));
     }
 
     @GetMapping("/get")
-    String get(@RequestParam(name = "k") String key) {
+    @ApiOperation(value = "Gets the value of key")
+    @ApiResponses(value = {
+            @ApiResponse(code = 200, message = "Value of key", response = String.class),
+            @ApiResponse(code = 404, message = "Key not found")
+    })
+    String get(
+            @ApiParam(name="k", value="String key with max length of 64")
+            @RequestParam(name = "k") String key
+    ) {
         return keyValueItemRepository.findById(key).orElseThrow(() -> new KeyNotFoundException(key)).getValue();
     }
 
     @GetMapping("/rm")
-    void rm(@RequestParam(name = "k") String key) {
+    @ApiOperation(value = "Deletes key")
+    @ApiResponses(value = {
+            @ApiResponse(code = 200, message = "Successfully deleted key-value pair"),
+            @ApiResponse(code = 404, message = "Key not found")
+    })
+    void rm(
+            @ApiParam(name="k", value="String key with max length of 64")
+            @RequestParam(name = "k") String key
+    ) {
         KeyValueItem item = keyValueItemRepository.findById(key).orElseThrow(() -> new KeyNotFoundException(key));
         keyValueItemRepository.delete(item);
     }
 
     @GetMapping("/clear")
+    @ApiOperation(value = "Deletes all items")
     void clear() {
         keyValueItemRepository.deleteAll();
     }
@@ -53,7 +87,12 @@ public class KeyValueServiceController {
     //getAll takes an optional page number parameter "p" which selects key value items in batches of 500
     //if the parameter is not supplied the whole data is fetched at once.
     @GetMapping("/getAll")
-    List<KeyValueItem> getAll(@RequestParam(name = "p") Optional<Integer> pageNumber) {
+    @ApiOperation(value = "Returns an array with all key-value pairs")
+    @ApiResponse(code = 200, message = "List of all key-value pairs", response = KeyValueItem[].class)
+    List<KeyValueItem> getAll(
+            @ApiParam(name="p", value="Optional index of a page with size 500. If not provided whole data set is returned")
+            @RequestParam(name = "p") Optional<Integer> pageNumber
+    ) {
         if(pageNumber.isPresent()) {
             Pageable pageable = PageRequest.of(pageNumber.get(), 500);
             return keyValueItemRepository.findAll(pageable).getContent();
@@ -63,7 +102,12 @@ public class KeyValueServiceController {
     }
 
     @GetMapping("/getKeys")
-    List<String> getKeys(@RequestParam(name = "p") Optional<Integer> pageNumber) {
+    @ApiOperation(value = "Returns an array with all keys")
+    @ApiResponse(code = 200, message = "List of all keys", response = String[].class)
+    List<String> getKeys(
+            @ApiParam(name="p", value="Optional index of a page with size 500. If not provided whole data set is returned")
+            @RequestParam(name = "p") Optional<Integer> pageNumber
+    ) {
         List<KeyValueItem> keys;
         if(pageNumber.isPresent()) {
             Pageable pageable = PageRequest.of(pageNumber.get(), 500);
@@ -76,7 +120,12 @@ public class KeyValueServiceController {
     }
 
     @GetMapping("/getValues")
-    List<String> getValues(@RequestParam(name = "p") Optional<Integer> pageNumber) {
+    @ApiOperation(value = "Returns an array with all values")
+    @ApiResponse(code = 200, message = "List of all values", response = String[].class)
+    List<String> getValues(
+            @ApiParam(name="p", value="Optional index of a page with size 500. If not provided whole data set is returned")
+            @RequestParam(name = "p") Optional<Integer> pageNumber
+    ) {
         List<KeyValueItem> keys;
         if(pageNumber.isPresent()) {
             Pageable pageable = PageRequest.of(pageNumber.get(), 500);
