@@ -1,9 +1,9 @@
-##General
+## General
 In resources\application.properties if the setting dbtest.initialize is set to true and the database is empty it will be populated with 1 million entries on startup for testing purposes.
 
 Swagger ui api description is available http://localhost:8080/swagger-ui.html
 
-##Project Structure
+## Project Structure
 Main package is com.via.keyvalueservice
 - KeyValueServiceApplication: the spring boot applciation
 - config
@@ -19,7 +19,7 @@ Main package is com.via.keyvalueservice
 - repositories:
   - KeyValueItemRepository: the KeyValueItem repository definition
 
-##Comments on specific tasks
+## Comments on specific tasks
 ### Tasks 2
 
 Querying a million of entries persistent on mongodb takes ~7 seconds, which considering the text format of the data is ok-ish. 
