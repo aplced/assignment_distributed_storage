@@ -4,6 +4,8 @@ import com.via.keyvalueservice.cluster.models.ClusterNode;
 import com.via.keyvalueservice.cluster.models.ClusterNodeRepository;
 import com.via.keyvalueservice.keyvalue.models.KeyValueItem;
 import com.via.keyvalueservice.keyvalue.models.KeyValueItemRepository;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.function.BodyInserters;
 import org.springframework.web.reactive.function.client.WebClient;
@@ -20,6 +22,8 @@ public class ClusterNodeUpdater {
     private final String hostIp;
     private static final String PORT = ":8080";
 
+    Logger logger = LoggerFactory.getLogger(ClusterNodeUpdater.class);
+
     public ClusterNodeUpdater(ClusterNodeRepository repository, KeyValueItemRepository itemRepository) throws UnknownHostException {
         this.clusterNodeRepository = repository;
         this.itemRepository = itemRepository;
@@ -33,19 +37,29 @@ public class ClusterNodeUpdater {
             throw new AlreadyInClusterException(host);
         }
 
-        WebClient nodeClient = WebClient.create("http://" + host + PORT);
-        ClusterNode[] clusterNodes = nodeClient.post()
-                .uri("/cluster/internal/joining?host=" + hostIp + "&nodeList=true")
-                .retrieve()
-                .bodyToMono(ClusterNode[].class)
-                .block();
+        ClusterNode[] clusterNodes = null;
+        try {
+            WebClient nodeClient = WebClient.create("http://" + host + PORT);
+            clusterNodes = nodeClient.post()
+                    .uri("/cluster/internal/joining?host=" + hostIp + "&nodeList=true")
+                    .retrieve()
+                    .bodyToMono(ClusterNode[].class)
+                    .block();
+        } catch (Exception ex) {
+            logger.warn("Cluster join: " + ex.getMessage());
+        }
 
-        Arrays.stream(clusterNodes).parallel().forEach(node -> {
-            clusterNodeRepository.save(node);
-            WebClient.create("http://" + node.getHostAddress() + PORT).post().uri("cluster/internal/joining?host=" + hostIp);
-        });
-
-        clusterNodeRepository.save(new ClusterNode(host, 0));
+        if(clusterNodes != null) {
+            clusterNodeRepository.save(new ClusterNode(host, 0));
+            Arrays.stream(clusterNodes).parallel().forEach(node -> {
+                try {
+                    WebClient.create("http://" + node.getHostAddress() + PORT).post().uri("cluster/internal/joining?host=" + hostIp);
+                    clusterNodeRepository.save(node);
+                } catch (Exception ex) {
+                    logger.warn("Notify join: " + ex.getMessage());
+                }
+            });
+        }
     }
 
     public void leaveCluster() {

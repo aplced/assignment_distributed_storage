@@ -1,6 +1,10 @@
 version: '3'
 services:
-  key_value_service:
+  keyvalueone:
     build: ../key-value-service/.
     ports:
       - "8080:8080"
+  keyvaluetwo:
+    build: ../key-value-service/.
+    ports:
+      - "9090:8080"
