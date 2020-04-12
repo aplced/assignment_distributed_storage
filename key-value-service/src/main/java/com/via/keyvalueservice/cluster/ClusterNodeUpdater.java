@@ -12,8 +12,11 @@ import org.springframework.web.reactive.function.client.WebClient;
 
 import java.net.InetAddress;
 import java.net.UnknownHostException;
+import java.time.LocalDateTime;
+import java.time.ZoneOffset;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Optional;
 
 @Component
 public class ClusterNodeUpdater {
@@ -36,7 +39,7 @@ public class ClusterNodeUpdater {
         if(clusterNodeRepository.count() > 0){
             throw new AlreadyInClusterException(host);
         }
-
+        long ticksJoining = LocalDateTime.now().toEpochSecond(ZoneOffset.UTC);
         ClusterNode[] clusterNodes = null;
         try {
             WebClient nodeClient = WebClient.create("http://" + host + PORT);
@@ -45,6 +48,22 @@ public class ClusterNodeUpdater {
                     .retrieve()
                     .bodyToMono(ClusterNode[].class)
                     .block();
+
+            KeyValueItem[] itemsInCluster = nodeClient.get()
+                    .uri("/cluster/internal/batchUpdate?ticks=" + ticksJoining)
+                    .retrieve()
+                    .bodyToMono(KeyValueItem[].class)
+                    .block();
+
+            Arrays.stream(itemsInCluster).parallel().forEach(item -> {
+                Optional<KeyValueItem> ownItem = itemRepository.findById(item.getKey());
+                if(ownItem.isPresent() && ownItem.get().getTicks() > item.getTicks()) {
+                    //Uh, oh not handling this corner case...
+                    throw new ClusterNodeUpdateCollisionException(ownItem.get(), item, host);
+                } else {
+                    itemRepository.save(item);
+                }
+            });
         } catch (Exception ex) {
             logger.warn("Cluster join: " + ex.getMessage());
         }
@@ -59,6 +78,9 @@ public class ClusterNodeUpdater {
                     logger.warn("Notify join: " + ex.getMessage());
                 }
             });
+
+            List<KeyValueItem> ownItems = itemRepository.findByTicksLessThan(ticksJoining);
+            updateKeyValueItems(ownItems);
         }
     }
 
@@ -98,6 +120,7 @@ public class ClusterNodeUpdater {
 
     public void updateKeyValueItems(List<KeyValueItem> updatedItems) {
         clusterNodeRepository.findAll().parallelStream().forEach(node -> {
+            logger.warn("Updating: " + node.getHostAddress() + " with [" + updatedItems + "]");
             WebClient nodeClient = WebClient.create("http://" + node.getHostAddress() + PORT);
             KeyValueItem[] remoteKeyValueItems = nodeClient
                     .post()
