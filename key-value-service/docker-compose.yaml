@@ -8,3 +8,7 @@ services:
     build: ../key-value-service/.
     ports:
       - "9090:8080"
+  keyvaluethree:
+    build: ../key-value-service/.
+    ports:
+      - "7070:8080"
