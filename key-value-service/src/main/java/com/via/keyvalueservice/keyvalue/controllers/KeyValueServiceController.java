@@ -55,6 +55,7 @@ public class KeyValueServiceController {
     void rm(@RequestParam(name = "k") String key) {
         KeyValueItem item = keyValueItemRepository.findById(key).orElseThrow(() -> new KeyValueServiceException(key));
         item.setDeleted(true);
+        item.setTicks(LocalDateTime.now().toEpochSecond(ZoneOffset.UTC));
         clusterNodeUpdater.updateKeyValueItem(item);
     }
 
@@ -62,6 +63,7 @@ public class KeyValueServiceController {
     void clear() {
         List<KeyValueItem> deletedItems = keyValueItemRepository.findAll().stream().map(i -> {
             i.setDeleted(true);
+            i.setTicks(LocalDateTime.now().toEpochSecond(ZoneOffset.UTC));
             return i;
         }).collect(Collectors.toList());
         clusterNodeUpdater.updateKeyValueItems(deletedItems);
