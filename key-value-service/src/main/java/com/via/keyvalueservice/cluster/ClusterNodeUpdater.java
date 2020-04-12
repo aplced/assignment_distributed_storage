@@ -27,6 +27,8 @@ public class ClusterNodeUpdater {
     }
 
     public void joinCluster(String host) {
+        testForSelf(host);
+
         if(clusterNodeRepository.count() > 0){
             throw new AlreadyInClusterException(host);
         }
@@ -95,5 +97,11 @@ public class ClusterNodeUpdater {
         });
 
         itemRepository.saveAll(updatedItems);
+    }
+
+    private void testForSelf(String host) {
+        if(host.equals(hostIp) || host.equals("127.0.0.1")){
+            throw new IllegalArgumentException("Can't cluster with self");
+        }
     }
 }
