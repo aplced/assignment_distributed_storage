@@ -25,14 +25,14 @@ public class ClusterController {
 
     @PostMapping("cluster/internal/joining")
     List<ClusterNode> joiningCluster(@RequestParam(name = "host") String joiningHost, @RequestParam("nodeList") Optional<Boolean> listClusterNodes) {
-
-        repository.save(new ClusterNode(joiningHost, 0));
+        String decodedHost = joiningHost;
+        repository.save(new ClusterNode(decodedHost, 0));
 
         if(listClusterNodes.isPresent() && listClusterNodes.get()) {
             //Get all nodes already in the cluster
             List<ClusterNode> clusterNodes = repository.findAll();
             //It is possible that the joining node is restarting and is already in the cluster
-            clusterNodes.removeIf(n -> n.getHostAddress().equals(joiningHost));
+            clusterNodes.removeIf(n -> n.getHostAddress().equals(decodedHost));
 
             return clusterNodes;
         } else {

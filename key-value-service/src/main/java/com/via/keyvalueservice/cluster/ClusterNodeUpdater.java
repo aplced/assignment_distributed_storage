@@ -31,25 +31,25 @@ public class ClusterNodeUpdater {
             throw new AlreadyInClusterException(host);
         }
 
-        clusterNodeRepository.save(new ClusterNode(host, 0));
-
-        WebClient nodeClient = WebClient.create(host + PORT);
+        WebClient nodeClient = WebClient.create("http://" + host + PORT);
         ClusterNode[] clusterNodes = nodeClient.post()
-                .uri("cluster/internal/update?host=" + hostIp + "&nodeList=true")
+                .uri("/cluster/internal/joining?host=" + hostIp + "&nodeList=true")
                 .retrieve()
                 .bodyToMono(ClusterNode[].class)
                 .block();
 
         Arrays.stream(clusterNodes).parallel().forEach(node -> {
             clusterNodeRepository.save(node);
-            WebClient.create(node.getHostAddress() + PORT).post().uri("cluster/internal/update?host=" + hostIp);
+            WebClient.create("http://" + node.getHostAddress() + PORT).post().uri("cluster/internal/joining?host=" + hostIp);
         });
+
+        clusterNodeRepository.save(new ClusterNode(host, 0));
     }
 
     public void leaveCluster() {
         clusterNodeRepository.findAll().stream().forEach(node -> {
-            WebClient nodeClient = WebClient.create(node.getHostAddress() + PORT);
-            nodeClient.post().uri("cluster/internal/update?host=" + hostIp);
+            WebClient nodeClient = WebClient.create("http://" + node.getHostAddress() + PORT);
+            nodeClient.post().uri("cluster/internal/leaving?host=" + hostIp);
         });
 
         clusterNodeRepository.deleteAll();
@@ -61,7 +61,7 @@ public class ClusterNodeUpdater {
 
     public void updateKeyValueItem(KeyValueItem updatedItem) {
         clusterNodeRepository.findAll().parallelStream().forEach(node -> {
-            WebClient nodeClient = WebClient.create(node.getHostAddress() + PORT);
+            WebClient nodeClient = WebClient.create("http://" + node.getHostAddress() + PORT);
             KeyValueItem remoteKeyValueItem = nodeClient
                     .post()
                     .uri("cluster/internal/update").body(BodyInserters.fromValue(updatedItem)).retrieve()
@@ -82,7 +82,7 @@ public class ClusterNodeUpdater {
 
     public void updateKeyValueItems(List<KeyValueItem> updatedItems) {
         clusterNodeRepository.findAll().parallelStream().forEach(node -> {
-            WebClient nodeClient = WebClient.create(node.getHostAddress() + PORT);
+            WebClient nodeClient = WebClient.create("http://" + node.getHostAddress() + PORT);
             KeyValueItem[] remoteKeyValueItems = nodeClient
                     .post()
                     .uri("cluster/internal/batchUpdate").body(BodyInserters.fromValue(updatedItems)).retrieve()
