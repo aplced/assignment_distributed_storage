@@ -33,7 +33,13 @@ public class ClusterNodeUpdater {
         hostIp = InetAddress.getLocalHost().getHostAddress();
     }
 
-    public void joinCluster(String host) {
+    public void joinCluster(String hostString) {
+        String host;
+        try {
+            host = InetAddress.getByName(hostString).getHostAddress();
+        } catch (UnknownHostException e) {
+            host = hostString;
+        }
         testForSelf(host);
 
         if(clusterNodeRepository.count() > 0){
@@ -55,11 +61,12 @@ public class ClusterNodeUpdater {
                     .bodyToMono(KeyValueItem[].class)
                     .block();
 
+            String finalHost = host;
             Arrays.stream(itemsInCluster).parallel().forEach(item -> {
                 Optional<KeyValueItem> ownItem = itemRepository.findById(item.getKey());
                 if(ownItem.isPresent() && ownItem.get().getTicks() > item.getTicks()) {
                     //Uh, oh not handling this corner case...
-                    throw new ClusterNodeUpdateCollisionException(ownItem.get(), item, host);
+                    throw new ClusterNodeUpdateCollisionException(ownItem.get(), item, finalHost);
                 } else {
                     itemRepository.save(item);
                 }
@@ -72,7 +79,7 @@ public class ClusterNodeUpdater {
             clusterNodeRepository.save(new ClusterNode(host, 0));
             Arrays.stream(clusterNodes).parallel().forEach(node -> {
                 try {
-                    WebClient.create("http://" + node.getHostAddress() + PORT).post().uri("cluster/internal/joining?host=" + hostIp);
+                    WebClient.create("http://" + node.getHostAddress() + PORT).post().uri("cluster/internal/joining?host=" + hostIp).retrieve();
                     clusterNodeRepository.save(node);
                 } catch (Exception ex) {
                     logger.warn("Notify join: " + ex.getMessage());
@@ -86,8 +93,13 @@ public class ClusterNodeUpdater {
 
     public void leaveCluster() {
         clusterNodeRepository.findAll().stream().forEach(node -> {
-            WebClient nodeClient = WebClient.create("http://" + node.getHostAddress() + PORT);
-            nodeClient.post().uri("cluster/internal/leaving?host=" + hostIp);
+            logger.warn("!!!Notifying " + node.getHostAddress() + " that we are leaving");
+            try {
+                WebClient nodeClient = WebClient.create("http://" + node.getHostAddress() + PORT);
+                nodeClient.post().uri("cluster/internal/leaving?host=" + hostIp).retrieve();
+            } catch (Exception ex) {
+                logger.warn("!!!Failed notifying " + node.getHostAddress(), ex);
+            }
         });
 
         clusterNodeRepository.deleteAll();
